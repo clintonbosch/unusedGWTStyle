@@ -25,6 +25,8 @@
         <java fork="true" failonerror="true" classname="za.co.bsg.cleaner.Main">
             <!--<jvmarg value="-Xss16M"/>-->
             <arg value="${input.path}"/>
+            <arg value="${stylesheet}"/>
+            <arg value="${output.path}"/>
             <classpath>
                 <pathelement path="classes"/>
                 <fileset dir="lib" includes="*.jar"/>
