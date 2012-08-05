@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<project name="Generator" default="run" basedir=".">
+
+    <property file="build.properties"/>
+
+    <path id="project.class.path">
+        <fileset dir="lib" includes="*.jar"/>
+    </path>
+
+    <target name="clean" description="Cleans this project">
+        <delete dir="classes" failonerror="false"/>
+    </target>
+
+    <target name="compile" depends="clean" description="Compile java source to bytecode">
+        <mkdir dir="classes"/>
+        <javac srcdir="src" includes="**" encoding="utf-8"
+               destdir="classes"
+               source="1.5" target="1.5" nowarn="true"
+               debug="true" debuglevel="lines,vars,source">
+            <classpath refid="project.class.path"/>
+        </javac>
+    </target>
+
+    <target name="run" depends="compile" description="Run the application">
+        <java fork="true" failonerror="true" classname="za.co.bsg.cleaner.Main">
+            <!--<jvmarg value="-Xss16M"/>-->
+            <arg value="${input.path}"/>
+            <classpath>
+                <pathelement path="classes"/>
+                <fileset dir="lib" includes="*.jar"/>
+            </classpath>
+        </java>
+    </target>
+
+</project>
