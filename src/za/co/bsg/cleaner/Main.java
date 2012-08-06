@@ -1,6 +1,8 @@
 package za.co.bsg.cleaner;
 
 import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.Collection;
@@ -14,6 +16,7 @@ import java.util.Set;
 public class Main {
 
     public static final String[] CLASS_METHOD_NAMES = new String[]{".setStyleName", ".addStyleName"};
+    final static Logger LOG = LoggerFactory.getLogger(Main.class);
 
     private Set<String> usedClassStyles = new HashSet<String>();
     private Set<String> usedIdStyles = new HashSet<String>();
@@ -43,27 +46,36 @@ public class Main {
             boolean inStyleBody = false;
             boolean isUsed = false;
             StringBuilder buf = new StringBuilder();
-            String tokenString = null;
+            StringBuilder newTokenString = new StringBuilder();
+            String oldTokenString;
             while ((line = br.readLine()) != null) {
                 if (line.indexOf("{") > 0) {
-                    tokenString = line.substring(0, line.indexOf("{"));
-                    String[] tokens = tokenString.split(" ");
+                    newTokenString = new StringBuilder();
+                    oldTokenString = line.substring(0, line.indexOf("{"));
+                    String[] tokens = oldTokenString.split(" ");
                     for (String token : tokens) {
                         if ((token.startsWith(".") && usedClassStyles.contains(token.substring(1))) ||
-                                (token.startsWith("#") && usedIdStyles.contains(token.substring(1)))) {
+                                (token.startsWith("#") && usedIdStyles.contains(token.substring(1))) ||
+                                token.startsWith("@sprite")) {
+                            newTokenString.append(token).append(" ");
+                            isUsed = true;
+                        } else if (!token.startsWith(".") && !token.startsWith("#") && !token.startsWith("@")) {
+                            // This is an element so we have to include it
+                            newTokenString.append(token).append(" ");
                             isUsed = true;
                         }
                     }
                     buf = new StringBuilder(line.substring(line.indexOf("{")));
+                    buf.append("\n");
                     inStyleBody = true;
                 } else if (inStyleBody) {
-                    buf.append(line);
+                    buf.append(line).append("\n");
                 }
                 if (line.contains("}")) {
                     inStyleBody = false;
                     String body = buf.toString();
                     if (isUsed) {
-                        newStyleSheet.append(tokenString).append(body);
+                        newStyleSheet.append(newTokenString).append(body).append("\n");
                         isUsed = false;
                     }
                 }
@@ -118,7 +130,7 @@ public class Main {
                 if (index > 0) {
                     int styleStart = line.indexOf(quote, index) + 1;
                     if (styleStart <= 0) {
-                        System.out.println("Variable used for style name in file " + fileName + "(" + line.trim() + ")");
+                        LOG.error("Variable used for style name in file " + fileName + "(" + line.trim() + ")");
                         continue;
                     }
                     int methodEnd = line.indexOf(")", styleStart);
@@ -144,7 +156,7 @@ public class Main {
                 getStyleName(line, styleStart, quote, usedIdStyles);
             }
         } catch (Exception e) {
-            System.out.println("Line = " + line);
+            LOG.error("Line = " + line);
             e.printStackTrace();
         }
     }
